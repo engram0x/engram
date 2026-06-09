@@ -105,12 +105,30 @@ const styles = `
   word-break: break-word;
 }
 
-/* terminal response: plain, left-aligned */
-.eterm-msg { max-width: 82%; }
+/* terminal response: subtle left-aligned bubble */
+.eterm-msg {
+  max-width: 82%;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-left: 2px solid rgba(201,169,110,0.5);
+  border-radius: 2px 12px 12px 12px;
+  padding: 10px 14px;
+}
 .eterm-line { white-space: pre-wrap; word-break: break-word; }
 .eterm-line.text { color: #d8d2c8; }
 .eterm-line.gold { color: #c9a96e; }
 .eterm-line.dim  { color: #6b6560; }
+
+.eterm-cursor {
+  display: inline-block;
+  width: 7px;
+  height: 1em;
+  background: #c9a96e;
+  margin-left: 4px;
+  vertical-align: text-bottom;
+  animation: eterm-blink 1s steps(1) infinite;
+}
+@keyframes eterm-blink { 0%, 50% { opacity: 1; } 50.01%, 100% { opacity: 0; } }
 
 .eterm-inputbar {
   display: flex; align-items: center; gap: 12px;
@@ -135,6 +153,7 @@ const styles = `
   padding: 10px 20px; cursor: pointer; transition: background 0.2s;
 }
 .eterm-send:hover { background: #d4b87a; }
+.eterm-send:disabled { opacity: 0.4; cursor: not-allowed; }
 
 @media (max-width: 820px) {
   .eterm-shell { flex-direction: column; height: auto; }
@@ -155,16 +174,44 @@ const styles = `
 
 const line = (text, tone = "text") => ({ text, tone });
 
+// Total characters in a response (used to drive the typewriter).
+const totalChars = (lines) => lines.reduce((n, l) => n + l.text.length, 0);
+
+// Reveal the first `revealed` characters of a response, line by line.
+function partial(lines, revealed) {
+  const out = [];
+  let rem = revealed;
+  for (const l of lines) {
+    if (rem >= l.text.length) {
+      out.push(l);
+      rem -= l.text.length;
+    } else if (rem > 0) {
+      out.push({ text: l.text.slice(0, rem), tone: l.tone });
+      rem = 0;
+      break;
+    } else {
+      break;
+    }
+  }
+  return out;
+}
+
 const AGENT_ROWS = [
-  "  #0042  ResearchBot     Score 847   TRUSTED",
-  "  #0108  RiskOracle      Score 792   TRUSTED",
-  "  #0231  ExecPrime       Score 705   VERIFIED",
+  "  ResearchBot   #0042    Score: 847     TRUSTED",
+  "  RiskOracle    #0108    Score: 792     TRUSTED",
+  "  ExecPrime     #0231    Score: 705     VERIFIED",
+];
+
+const TRADING_AGENTS = [
+  "  TradingBot    #0031    Score: 2,341   ELITE",
+  "  ArbitrageAI   #0087    Score: 1,876   TRUSTED",
+  "  MarketMind    #0124    Score: 1,203   TRUSTED",
 ];
 
 const HELP = [
   line("Commands", "gold"),
   line("  connect wallet            connect a wallet"),
-  line("  register agent <name>     register a new agent (0.001 ETH stake)"),
+  line("  register agent <name>     register a new agent (0.001 ENGRAM stake)"),
   line("  check score <id>          look up an agent's GramScore"),
   line("  find agent <capability>   discover agents by capability"),
   line("  create job <description>  post a job with escrow"),
@@ -179,9 +226,10 @@ const INITIAL = [
 const INITIAL_MESSAGES = [{ role: "agent", lines: INITIAL }];
 
 function findAgents(cap) {
+  const rows = (cap || "").toLowerCase().includes("trading") ? TRADING_AGENTS : AGENT_ROWS;
   return [
     line(`Agents matching "${cap || "any"}":`, "gold"),
-    ...AGENT_ROWS.map((r) => line(r)),
+    ...rows.map((r) => line(r)),
   ];
 }
 
@@ -208,14 +256,14 @@ function process(raw) {
   }
 
   if (lower.startsWith("register agent")) {
-    const name = input.slice("register agent".length).trim() || "Unnamed Agent";
+    const name = input.slice("register agent".length).trim() || "Agent";
     return {
       lines: [
         line(`Registering "${name}"…`, "dim"),
-        line("✓ Agent registered", "gold"),
-        line("  GramID: #0042 · Stake: 0.001 ETH · Status: ACTIVE"),
+        line(`✓ Agent ${name} registered`, "gold"),
+        line("  GramID assigned · Stake: 0.001 ENGRAM · Status: ACTIVE"),
       ],
-      patch: { agentId: "#0042", score: 847, jobs: 12 },
+      patch: { agentId: name },
     };
   }
 
@@ -224,10 +272,9 @@ function process(raw) {
     const id = (cleaned || "0042").padStart(4, "0");
     return {
       lines: [
-        line(`GramScore for Agent #${id}`, "gold"),
-        line("  847 · Jobs completed: 12 · Reputation: TRUSTED"),
+        line(`Agent #${id} · ENGRAM · Score: 1,247 · Jobs: 8 · Reputation: ELITE`, "gold"),
       ],
-      patch: { agentId: `#${id}`, score: 847, jobs: 12 },
+      patch: { score: "1,247", jobs: 8 },
     };
   }
 
@@ -241,7 +288,7 @@ function process(raw) {
       lines: [
         line(desc ? `Posting job: "${desc}"…` : "Posting job…", "dim"),
         line("✓ Job #0089 created", "gold"),
-        line("  Escrow: 0.05 ETH · Status: OPEN · Waiting for worker…"),
+        line("  Worker: TradingBot #0031 · Escrow: 0.05 ETH · Status: OPEN"),
       ],
     };
   }
@@ -276,10 +323,11 @@ function process(raw) {
   if (has("gramscore", "gram score", "reputation")) {
     return {
       lines: [
-        line("GramScore", "gold"),
-        line("Engram's on-chain reputation system. Agents earn it by completing"),
-        line("jobs and have it slashed on failure. It's non-transferable — a pure"),
-        line("measure of reliability. Higher score → more trust → more work."),
+        line("GramScore — reputation", "gold"),
+        line("Agents earn GramScore by completing jobs successfully. Fail a job,"),
+        line("miss a deadline or act maliciously and a portion is slashed. It's"),
+        line("non-transferable, so it can only be earned through real work — a"),
+        line("pure, on-chain trust signal. Higher score → more trust → more work."),
         line("Try:  check score 0042", "dim"),
       ],
     };
@@ -288,9 +336,10 @@ function process(raw) {
   if (has("gramid", "gram id", "identity")) {
     return {
       lines: [
-        line("GramID", "gold"),
-        line("The universal identity layer. Every agent gets a verifiable on-chain"),
-        line("ID — discoverable, stakeable and portable across the network."),
+        line("GramID — identity", "gold"),
+        line("Register an agent and stake $ENGRAM to mint a GramID — a verifiable,"),
+        line("portable on-chain identity. The stake aligns incentives and keeps the"),
+        line("registry honest; it's returned in full when you deregister."),
         line("Try:  register agent <name>", "dim"),
       ],
     };
@@ -299,9 +348,11 @@ function process(raw) {
   if (has("gramlink", "gram link")) {
     return {
       lines: [
-        line("GramLink", "gold"),
-        line("The agent-to-agent communication & payment protocol. Task delegation,"),
-        line("escrowed payments and output delivery — all settled on-chain."),
+        line("GramLink — coordination", "gold"),
+        line("Post a job and its payment is locked in escrow. A worker agent"),
+        line("accepts, delivers the result, and the escrow is released on"),
+        line("completion. Failures refund the hirer — all settled on-chain,"),
+        line("with no middleman."),
         line("Try:  create job <description>", "dim"),
       ],
     };
@@ -313,7 +364,7 @@ function process(raw) {
         line("Registering an agent", "gold"),
         line("  1. Connect a wallet on Base      →  connect wallet"),
         line("  2. Register with a name          →  register agent <name>"),
-        line("  3. Stake 0.001 ETH (refunded when you deregister)"),
+        line("  3. Stake 0.001 ENGRAM (refunded when you deregister)"),
         line("Your agent receives a GramID and becomes discoverable. Try it now.", "dim"),
       ],
     };
@@ -357,17 +408,44 @@ export default function Terminal() {
   const [messages, setMessages] = useState(INITIAL_MESSAGES);
   const [value, setValue] = useState("");
   const [session, setSession] = useState({ wallet: null, agentId: "ENGRAM", score: "1,247", jobs: 8 });
+  // in-flight agent reply: { lines, phase: "thinking" | "typing", revealed }
+  const [pending, setPending] = useState(null);
   const endRef = useRef(null);
   const inputRef = useRef(null);
 
+  // keep the view pinned to the latest line as the reply streams in
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });
-  }, [messages]);
+  }, [messages, pending]);
+
+  // drives the "thinking" pause, then the per-character typewriter
+  useEffect(() => {
+    if (!pending) return undefined;
+
+    if (pending.phase === "thinking") {
+      const t = setTimeout(() => {
+        setPending((p) => (p ? { ...p, phase: "typing", revealed: 0 } : p));
+      }, 1300);
+      return () => clearTimeout(t);
+    }
+
+    // phase === "typing"
+    if (pending.revealed >= totalChars(pending.lines)) {
+      const finished = pending.lines;
+      setMessages((m) => [...m, { role: "agent", lines: finished }]);
+      setPending(null);
+      return undefined;
+    }
+    const t = setTimeout(() => {
+      setPending((p) => (p && p.phase === "typing" ? { ...p, revealed: p.revealed + 1 } : p));
+    }, 20);
+    return () => clearTimeout(t);
+  }, [pending]);
 
   const submit = (e) => {
     e.preventDefault();
     const raw = value;
-    if (!raw.trim()) return;
+    if (!raw.trim() || pending) return;
     const result = process(raw);
     setValue("");
     if (result.clear) {
@@ -375,12 +453,11 @@ export default function Terminal() {
       return;
     }
     if (result.patch) setSession((s) => ({ ...s, ...result.patch }));
-    setMessages((m) => [
-      ...m,
-      { role: "user", text: raw },
-      { role: "agent", lines: result.lines },
-    ]);
+    setMessages((m) => [...m, { role: "user", text: raw }]);
+    setPending({ lines: result.lines, phase: "thinking", revealed: 0 });
   };
+
+  const typed = pending && pending.phase === "typing" ? partial(pending.lines, pending.revealed) : null;
 
   const walletDisplay = account ? truncate(account) : session.wallet || "Not connected";
   const walletConnected = Boolean(account || session.wallet);
@@ -448,6 +525,26 @@ export default function Terminal() {
                 </div>
               )
             )}
+
+            {pending && (
+              <div className="eterm-row agent">
+                <div className="eterm-msg">
+                  {pending.phase === "thinking" ? (
+                    <div className="eterm-line dim">Engram is thinking<span className="eterm-cursor" /></div>
+                  ) : typed && typed.length ? (
+                    typed.map((l, j) => (
+                      <div key={j} className={`eterm-line ${l.tone}`}>
+                        {l.text}
+                        {j === typed.length - 1 && <span className="eterm-cursor" />}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="eterm-line"><span className="eterm-cursor" /></div>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div ref={endRef} />
           </div>
 
@@ -458,13 +555,14 @@ export default function Terminal() {
               className="eterm-input"
               value={value}
               onChange={(e) => setValue(e.target.value)}
-              placeholder="Type a command or ask a question…"
+              placeholder={pending ? "Engram is responding…" : "Type a command or ask a question…"}
               autoFocus
               spellCheck={false}
               autoComplete="off"
               aria-label="terminal input"
+              disabled={!!pending}
             />
-            <button type="submit" className="eterm-send">Send</button>
+            <button type="submit" className="eterm-send" disabled={!!pending}>Send</button>
           </form>
         </main>
       </div>
