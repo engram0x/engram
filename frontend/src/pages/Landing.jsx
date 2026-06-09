@@ -683,8 +683,8 @@ const styles = `
 
 @media (max-width: 768px) {
   /* Mobile nav: show only logo + ENGRAM (left) and Buy $ENGRAM (right).
-     Nav links are already hidden at <=900px; also hide the 0xengram.xyz
-     ghost button so nothing overlaps or gets cut off. */
+     Nav links are already hidden at <=900px; also hide the ghost button
+     (Launch App) so nothing overlaps or gets cut off. */
   .g-nav { padding: 0 16px; }
   .g-nav-links { display: none; }
   .g-btn-nav-ghost { display: none; }
@@ -748,7 +748,6 @@ export default function Landing() {
           <li><Link to="/terminal">Terminal</Link></li>
         </ul>
         <div className="g-nav-right">
-          <a href="https://0xengram.xyz" className="g-btn-nav-ghost">0xengram.xyz</a>
           <Link to="/app" className="g-btn-nav-ghost">Launch App →</Link>
           <a href="https://app.uniswap.org" target="_blank" rel="noreferrer" className="g-btn-nav-gold">Buy $ENGRAM</a>
         </div>
@@ -988,7 +987,7 @@ export default function Landing() {
           <li><a href="#">GitHub</a></li>
           <li><a href="#">Docs</a></li>
         </ul>
-        <div className="g-footer-copy">© 2025 Engram · 0xengram.xyz · Base Chain</div>
+        <div className="g-footer-copy">© 2025 Engram · Base Chain</div>
       </div>
     </div>
   );
