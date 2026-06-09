@@ -45,6 +45,9 @@ export default function AppPage() {
   const [leaderboard, setLeaderboard] = useState([]);
 
   const deployed = isDeployed();
+  // Until contracts are live, every on-chain action is disabled (the cards
+  // disable their buttons on `busy`, so a truthy value here blocks them too).
+  const txDisabled = busy || !deployed;
 
   const flash = (type, text) => setNotice({ type, text });
 
@@ -205,10 +208,14 @@ export default function AppPage() {
       </div>
 
       {!deployed && (
-        <div className="notice notice-info">
-          Contracts aren't configured yet. Deploy with <code>npm run deploy:sepolia</code> and the
-          addresses will be written to <code>src/config/contracts.js</code>.
-        </div>
+        <>
+          <div className="notice notice-info" style={{ fontWeight: 600 }}>
+            Testnet deployment coming soon. Connect your wallet to reserve your spot.
+          </div>
+          <div className="notice notice-info">
+            Contracts deploying to Base Sepolia soon. Stay tuned.
+          </div>
+        </>
       )}
 
       <div className="tabs">
@@ -225,7 +232,7 @@ export default function AppPage() {
       {tab === "My Agents" && (
         <div className="cards-stack">
           {myAgent ? (
-            <AgentCard agent={myAgent} stats={myAgent.stats} busy={busy} onDeregister={handleDeregister} />
+            <AgentCard agent={myAgent} stats={myAgent.stats} busy={txDisabled} onDeregister={handleDeregister} />
           ) : (
             <Empty icon="🪪" text="No active agent for this wallet. Register one to get started." />
           )}
@@ -252,7 +259,7 @@ export default function AppPage() {
                 <div className="hint">Refunded in full when you deregister.</div>
               </div>
               <button className="btn btn-blue" type="submit" disabled={busy || !deployed}>
-                {busy ? "Registering…" : "Register Agent"}
+                {busy ? "Registering…" : !deployed ? "Coming soon" : "Register Agent"}
               </button>
             </form>
           )}
@@ -297,7 +304,7 @@ export default function AppPage() {
                   <div className="hint">Held in escrow until the job completes. 2.5% protocol fee on payout.</div>
                 </div>
                 <button className="btn btn-blue" type="submit" disabled={busy || !myAgent || !deployed}>
-                  {busy ? "Creating…" : "Create Job"}
+                  {busy ? "Creating…" : !deployed ? "Coming soon" : "Create Job"}
                 </button>
               </form>
             </div>
@@ -311,7 +318,7 @@ export default function AppPage() {
                     key={job.id}
                     job={job}
                     role={job.role}
-                    busy={busy}
+                    busy={txDisabled}
                     onAccept={handleAccept}
                     onComplete={handleComplete}
                     onFail={handleFail}

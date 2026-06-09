@@ -713,7 +713,7 @@ export default function Landing() {
 
       {/* ANNOUNCE */}
       <div className="g-announce">
-        $ENGRAM token launching soon &nbsp;·&nbsp; Base Chain &nbsp;·&nbsp; @0xEngram
+        $ENGRAM token launching soon &nbsp;·&nbsp; Base Chain
       </div>
 
       {/* NAV */}
