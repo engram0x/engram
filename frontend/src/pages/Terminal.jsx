@@ -3,7 +3,7 @@ import Nav from "../components/Nav";
 import { useWallet } from "../context/WalletContext";
 
 /*
-  /terminal — a premium demo "protocol terminal".
+  /terminal — a premium "protocol terminal".
 
   Front-end mock only (no chain calls). Two-panel layout: a left session
   sidebar and a right console with a single input that accepts BOTH slash-style
@@ -59,12 +59,12 @@ const styles = `
   background: #c9a96e; box-shadow: 0 0 8px rgba(201,169,110,0.7);
 }
 
-.eterm-demo-pill {
+.eterm-beta-pill {
   margin-top: auto;
-  border: 1px solid rgba(201,169,110,0.22);
+  border: 1px solid rgba(201,169,110,0.3);
   color: #c9a96e;
-  font-size: 9px;
-  letter-spacing: 0.16em;
+  font-size: 10px;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   padding: 9px 10px;
   text-align: center;
@@ -88,12 +88,29 @@ const styles = `
   font-size: 14px;
   line-height: 1.7;
 }
+.eterm-row { display: flex; margin-bottom: 16px; }
+.eterm-row.user { justify-content: flex-end; }
+.eterm-row.agent { justify-content: flex-start; }
+
+/* user message: gold-bordered bubble on the right */
+.eterm-bubble {
+  max-width: 76%;
+  border: 1px solid rgba(201,169,110,0.45);
+  background: rgba(201,169,110,0.06);
+  color: #f0ece4;
+  padding: 10px 14px;
+  border-radius: 12px 12px 2px 12px;
+  font-size: 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* terminal response: plain, left-aligned */
+.eterm-msg { max-width: 82%; }
 .eterm-line { white-space: pre-wrap; word-break: break-word; }
 .eterm-line.text { color: #d8d2c8; }
 .eterm-line.gold { color: #c9a96e; }
 .eterm-line.dim  { color: #6b6560; }
-.eterm-line.user { color: #ffffff; margin-top: 6px; }
-.eterm-uprompt { color: #c9a96e; margin-right: 10px; }
 
 .eterm-inputbar {
   display: flex; align-items: center; gap: 12px;
@@ -131,7 +148,7 @@ const styles = `
     align-items: flex-start;
   }
   .eterm-side-title { width: 100%; }
-  .eterm-demo-pill { margin: 0; }
+  .eterm-beta-pill { margin: 0; }
   .eterm-output { min-height: 52vh; }
 }
 `;
@@ -157,10 +174,12 @@ const HELP = [
 
 const INITIAL = [
   line("Engram Protocol Terminal", "gold"),
-  line("v0.1 · Base · demo mode", "dim"),
+  line("v0.1 · Base", "dim"),
   line("Type a command or ask a question.  Try:  what is Engram?   ·   help"),
   line(""),
 ];
+
+const INITIAL_MESSAGES = [{ role: "agent", lines: INITIAL }];
 
 function findAgents(cap) {
   return [
@@ -185,7 +204,7 @@ function process(raw) {
       lines: [
         line("Connecting wallet…", "dim"),
         line("✓ Wallet connected", "gold"),
-        line(`  ${addr} · Base Sepolia · 0.42 ETH`),
+        line(`  ${addr} · Base · 0.42 ETH`),
       ],
       patch: { wallet: addr },
     };
@@ -338,7 +357,7 @@ function truncate(addr) {
 
 export default function Terminal() {
   const { account } = useWallet();
-  const [history, setHistory] = useState(INITIAL);
+  const [messages, setMessages] = useState(INITIAL_MESSAGES);
   const [value, setValue] = useState("");
   const [session, setSession] = useState({ wallet: null, agentId: null, score: null, jobs: null });
   const endRef = useRef(null);
@@ -346,7 +365,7 @@ export default function Terminal() {
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });
-  }, [history]);
+  }, [messages]);
 
   const submit = (e) => {
     e.preventDefault();
@@ -355,14 +374,14 @@ export default function Terminal() {
     const result = process(raw);
     setValue("");
     if (result.clear) {
-      setHistory(INITIAL);
+      setMessages(INITIAL_MESSAGES);
       return;
     }
     if (result.patch) setSession((s) => ({ ...s, ...result.patch }));
-    setHistory((h) => [
-      ...h,
-      { text: raw, tone: "user" },
-      ...result.lines,
+    setMessages((m) => [
+      ...m,
+      { role: "user", text: raw },
+      { role: "agent", lines: result.lines },
     ]);
   };
 
@@ -382,11 +401,11 @@ export default function Terminal() {
           <div className="eterm-side-group">
             <div className="eterm-side-row">
               <span className="eterm-side-label">Status</span>
-              <span className="eterm-status"><span className="eterm-dot" />Online · demo</span>
+              <span className="eterm-status"><span className="eterm-dot" />Online</span>
             </div>
             <div className="eterm-side-row">
               <span className="eterm-side-label">Network</span>
-              <span className="eterm-side-val gold">Base Sepolia</span>
+              <span className="eterm-side-val gold">Base</span>
             </div>
             <div className="eterm-side-row">
               <span className="eterm-side-label">Wallet</span>
@@ -406,7 +425,7 @@ export default function Terminal() {
             </div>
           </div>
 
-          <div className="eterm-demo-pill">Demo mode · Mainnet deploying soon</div>
+          <div className="eterm-beta-pill">Beta · Base</div>
         </aside>
 
         {/* ── CONSOLE ── */}
@@ -417,12 +436,21 @@ export default function Terminal() {
           </div>
 
           <div className="eterm-output" onClick={() => inputRef.current?.focus()}>
-            {history.map((l, i) => (
-              <div key={i} className={`eterm-line ${l.tone}`}>
-                {l.tone === "user" && <span className="eterm-uprompt">❯</span>}
-                <span>{l.text}</span>
-              </div>
-            ))}
+            {messages.map((m, i) =>
+              m.role === "user" ? (
+                <div key={i} className="eterm-row user">
+                  <div className="eterm-bubble">{m.text}</div>
+                </div>
+              ) : (
+                <div key={i} className="eterm-row agent">
+                  <div className="eterm-msg">
+                    {m.lines.map((l, j) => (
+                      <div key={j} className={`eterm-line ${l.tone}`}>{l.text}</div>
+                    ))}
+                  </div>
+                </div>
+              )
+            )}
             <div ref={endRef} />
           </div>
 
