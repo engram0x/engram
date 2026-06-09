@@ -35,6 +35,8 @@ const styles = `
   font-family: var(--sans);
   font-weight: 300;
   min-height: 100vh;
+  /* offset for the fixed nav (68px) so the announce bar isn't hidden under it */
+  padding-top: 68px;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -59,9 +61,11 @@ const styles = `
   padding: 0 48px;
   height: 68px;
   border-bottom: 1px solid var(--border);
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 100;
+  left: 0;
+  right: 0;
+  z-index: 1000;
   background: rgba(10,10,10,0.95);
   backdrop-filter: blur(12px);
 }
@@ -77,6 +81,9 @@ const styles = `
   width: 28px;
   height: 28px;
   object-fit: contain;
+  /* the logo PNG is a gold icon on a black tile; blend the black into the
+     dark nav so only the icon shows (no square box) */
+  mix-blend-mode: lighten;
 }
 
 .g-nav-logo-text {
@@ -657,6 +664,9 @@ const styles = `
 .g-radar line { stroke: var(--gold); }
 .g-radar .dot { fill: var(--gold); }
 
+/* keep anchored sections clear of the fixed nav when jumped to */
+.g-flow-section, .g-primitives-section, .g-token-section { scroll-margin-top: 80px; }
+
 /* ── RESPONSIVE ── */
 @media (max-width: 900px) {
   .g-nav { padding: 0 20px; }
@@ -669,6 +679,15 @@ const styles = `
   .g-moat-section { padding: 100px 20px; }
   .g-footer { padding: 32px 20px; flex-direction: column; text-align: center; }
   .g-hero-stats { gap: 32px; }
+}
+
+@media (max-width: 768px) {
+  /* Mobile nav: show only logo + ENGRAM (left) and Buy $ENGRAM (right).
+     Nav links are already hidden at <=900px; also hide the 0xengram.xyz
+     ghost button so nothing overlaps or gets cut off. */
+  .g-nav { padding: 0 16px; }
+  .g-nav-links { display: none; }
+  .g-btn-nav-ghost { display: none; }
 }
 `;
 

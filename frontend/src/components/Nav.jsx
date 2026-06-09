@@ -39,7 +39,7 @@ const navStyles = `
   gap: 12px;
   text-decoration: none;
 }
-.egnav-logo img { width: 28px; height: 28px; object-fit: contain; }
+.egnav-logo img { width: 28px; height: 28px; object-fit: contain; mix-blend-mode: lighten; }
 .egnav-logo-text {
   font-size: 13px;
   font-weight: 600;
