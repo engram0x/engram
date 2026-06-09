@@ -771,7 +771,7 @@ export default function Landing() {
         </svg>
 
         <div className="g-hero-inner g-fade-in">
-          <p className="g-hero-eyebrow">Agent-to-Agent Network &nbsp;·&nbsp; Base L2</p>
+          <p className="g-hero-eyebrow">Agent-to-Agent Network</p>
           <h1>
             The coordination<br />
             protocol for<br />
