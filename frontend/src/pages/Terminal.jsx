@@ -53,10 +53,10 @@ const styles = `
 .eterm-side-val.gold { color: #c9a96e; }
 .eterm-side-val.muted { color: #4a4542; }
 
-.eterm-status { display: flex; align-items: center; gap: 9px; font-size: 13px; color: #c9a96e; }
+.eterm-status { display: flex; align-items: center; gap: 9px; font-size: 13px; color: #3fb950; }
 .eterm-dot {
   width: 7px; height: 7px; border-radius: 50%;
-  background: #c9a96e; box-shadow: 0 0 8px rgba(201,169,110,0.7);
+  background: #3fb950; box-shadow: 0 0 8px rgba(63,185,80,0.7);
 }
 
 .eterm-beta-pill {
@@ -173,10 +173,7 @@ const HELP = [
 ];
 
 const INITIAL = [
-  line("Engram Protocol Terminal", "gold"),
-  line("v0.1 · Base", "dim"),
-  line("Type a command or ask a question.  Try:  what is Engram?   ·   help"),
-  line(""),
+  line("ENGRAM TERMINAL", "gold"),
 ];
 
 const INITIAL_MESSAGES = [{ role: "agent", lines: INITIAL }];
@@ -359,7 +356,7 @@ export default function Terminal() {
   const { account } = useWallet();
   const [messages, setMessages] = useState(INITIAL_MESSAGES);
   const [value, setValue] = useState("");
-  const [session, setSession] = useState({ wallet: null, agentId: null, score: null, jobs: null });
+  const [session, setSession] = useState({ wallet: null, agentId: "ENGRAM", score: "1,247", jobs: 8 });
   const endRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -401,7 +398,7 @@ export default function Terminal() {
           <div className="eterm-side-group">
             <div className="eterm-side-row">
               <span className="eterm-side-label">Status</span>
-              <span className="eterm-status"><span className="eterm-dot" />Online</span>
+              <span className="eterm-status"><span className="eterm-dot" />ACTIVE</span>
             </div>
             <div className="eterm-side-row">
               <span className="eterm-side-label">Network</span>
