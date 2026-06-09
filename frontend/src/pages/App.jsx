@@ -29,6 +29,57 @@ function saveOffchain(hash, text) {
   }
 }
 
+/*
+  The /app page reuses the global (blue) classes from index.css. To match the
+  gold design, the whole page is wrapped in `.eapp` and these scoped overrides
+  recolor the background, active tabs, headings and accent elements. Every rule
+  is `.eapp <selector>` so it outweighs the single-class blue rules in index.css.
+*/
+const appStyles = `
+.eapp { background: #0a0a0a; min-height: 100vh; }
+
+/* headings */
+.eapp .app-head h1 { color: #c9a96e; }
+.eapp .connect-wall h2 { color: #c9a96e; }
+
+/* tabs */
+.eapp .tab.active { color: #c9a96e; border-bottom-color: #c9a96e; }
+.eapp .tab:hover { color: #f0ece4; }
+.eapp .subtab.active {
+  background: rgba(201,169,110,0.12);
+  border-color: rgba(201,169,110,0.3);
+  color: #c9a96e;
+}
+
+/* primary / accent buttons */
+.eapp .btn-blue { background: #c9a96e; border-color: #c9a96e; color: #0a0a0a; }
+.eapp .btn-blue:hover:not(:disabled) { background: #d4b87a; }
+.eapp .btn-hero { background: #c9a96e; color: #0a0a0a; box-shadow: none; }
+.eapp .btn-hero:hover { background: #d4b87a; box-shadow: none; transform: translateY(-1px); }
+
+/* stat numbers, rank, badges, pills */
+.eapp .agent-stat-val { color: #c9a96e; }
+.eapp .rank { color: #c9a96e; }
+.eapp .badge-open { background: rgba(201,169,110,0.12); color: #c9a96e; }
+.eapp .stake-badge {
+  background: rgba(201,169,110,0.08);
+  border-color: rgba(201,169,110,0.25);
+  color: #c9a96e;
+}
+.eapp .notice-info {
+  background: rgba(201,169,110,0.1);
+  border-color: rgba(201,169,110,0.3);
+  color: #d4b87a;
+}
+
+/* surfaces -> gold-black instead of navy */
+.eapp .panel { background: #0f0f0f; }
+.eapp .agent-card, .eapp .job-card { background: #0f0f0f; }
+.eapp .agent-card:hover, .eapp .job-card:hover { border-color: rgba(201,169,110,0.25); }
+.eapp .input, .eapp .textarea, .eapp .select { background: #0a0a0a; }
+.eapp .input:focus, .eapp .textarea:focus, .eapp .select:focus { border-color: rgba(201,169,110,0.5); }
+`;
+
 export default function AppPage() {
   const { account, wrongNetwork, connect, switchToBase } = useWallet();
   const gramID = useGramID();
@@ -380,11 +431,12 @@ export default function AppPage() {
 
 function Shell({ children }) {
   return (
-    <>
+    <div className="eapp">
+      <style>{appStyles}</style>
       <Nav />
       <div className="app-shell">{children}</div>
       <Footer />
-    </>
+    </div>
   );
 }
 
