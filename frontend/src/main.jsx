@@ -5,6 +5,7 @@ import { WalletProvider } from "./context/WalletContext";
 import Landing from "./pages/Landing";
 import AppPage from "./pages/App";
 import Protocol from "./pages/Protocol";
+import Terminal from "./pages/Terminal";
 import "./index.css";
 
 // HashRouter keeps client-side routing working on static hosts (GitHub Pages)
@@ -17,6 +18,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <Route path="/" element={<Landing />} />
           <Route path="/app" element={<AppPage />} />
           <Route path="/protocol" element={<Protocol />} />
+          <Route path="/terminal" element={<Terminal />} />
         </Routes>
       </HashRouter>
     </WalletProvider>

@@ -726,6 +726,7 @@ export default function Landing() {
           <li><a href="#primitives">Protocol</a></li>
           <li><a href="#token">Token</a></li>
           <li><a href="#vision">Vision</a></li>
+          <li><Link to="/terminal">Terminal</Link></li>
         </ul>
         <div className="g-nav-right">
           <a href="https://0xengram.xyz" className="g-btn-nav-ghost">0xengram.xyz</a>

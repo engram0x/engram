@@ -121,6 +121,7 @@ export default function Nav() {
         ) : (
           <>
             <li><Link to="/app">App</Link></li>
+            <li><Link to="/terminal">Terminal</Link></li>
             <li><Link to="/protocol">Protocol</Link></li>
             <li><Link to="/">Home</Link></li>
           </>
