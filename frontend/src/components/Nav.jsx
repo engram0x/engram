@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import WalletConnect from "./WalletConnect";
 
 /*
@@ -141,26 +141,20 @@ const navStyles = `
 }
 `;
 
+// Shared across every page except the landing page (which has its own gold
+// nav). Links mirror the landing nav so navigation is consistent site-wide;
+// Home is reachable via the logo.
+const NAV_LINKS = [
+  { label: "Protocol", to: "/protocol" },
+  { label: "Token", to: "/token" },
+  { label: "Vision", to: "/vision" },
+  { label: "Terminal", to: "/terminal" },
+  { label: "App", to: "/app" },
+];
+
 export default function Nav() {
-  const { pathname } = useLocation();
-  const onLanding = pathname === "/";
   const [mobileOpen, setMobileOpen] = useState(false);
   const closeMenu = () => setMobileOpen(false);
-
-  const links = onLanding ? (
-    <>
-      <a href="#primitives" onClick={closeMenu}>Protocol</a>
-      <a href="#token" onClick={closeMenu}>Token</a>
-      <a href="#vision" onClick={closeMenu}>Vision</a>
-    </>
-  ) : (
-    <>
-      <Link to="/app" onClick={closeMenu}>App</Link>
-      <Link to="/terminal" onClick={closeMenu}>Terminal</Link>
-      <Link to="/protocol" onClick={closeMenu}>Protocol</Link>
-      <Link to="/" onClick={closeMenu}>Home</Link>
-    </>
-  );
 
   return (
     <div className="egnav">
@@ -172,24 +166,12 @@ export default function Nav() {
       </Link>
 
       <ul className="egnav-links">
-        {onLanding ? (
-          <>
-            <li><a href="#primitives">Protocol</a></li>
-            <li><a href="#token">Token</a></li>
-            <li><a href="#vision">Vision</a></li>
-          </>
-        ) : (
-          <>
-            <li><Link to="/app">App</Link></li>
-            <li><Link to="/terminal">Terminal</Link></li>
-            <li><Link to="/protocol">Protocol</Link></li>
-            <li><Link to="/">Home</Link></li>
-          </>
-        )}
+        {NAV_LINKS.map((l) => (
+          <li key={l.to}><Link to={l.to}>{l.label}</Link></li>
+        ))}
       </ul>
 
       <div className="egnav-right">
-        {onLanding && <Link to="/app" className="btn-primary-sm">Launch App</Link>}
         <WalletConnect />
         <button
           className="egnav-burger"
@@ -202,7 +184,13 @@ export default function Nav() {
       </div>
 
       {/* Mobile dropdown — same links as the desktop bar */}
-      {mobileOpen && <div className="egnav-mobile">{links}</div>}
+      {mobileOpen && (
+        <div className="egnav-mobile">
+          {NAV_LINKS.map((l) => (
+            <Link key={l.to} to={l.to} onClick={closeMenu}>{l.label}</Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

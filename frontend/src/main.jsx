@@ -5,6 +5,8 @@ import { WalletProvider } from "./context/WalletContext";
 import Landing from "./pages/Landing";
 import AppPage from "./pages/App";
 import Protocol from "./pages/Protocol";
+import Token from "./pages/Token";
+import Vision from "./pages/Vision";
 import Terminal from "./pages/Terminal";
 import "./index.css";
 
@@ -18,6 +20,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <Route path="/" element={<Landing />} />
           <Route path="/app" element={<AppPage />} />
           <Route path="/protocol" element={<Protocol />} />
+          <Route path="/token" element={<Token />} />
+          <Route path="/vision" element={<Vision />} />
           <Route path="/terminal" element={<Terminal />} />
         </Routes>
       </HashRouter>

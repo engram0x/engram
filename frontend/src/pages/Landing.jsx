@@ -818,9 +818,9 @@ export default function Landing() {
           <span className="g-nav-logo-text">Engram</span>
         </a>
         <ul className="g-nav-links">
-          <li><a href="#primitives">Protocol</a></li>
-          <li><a href="#token">Token</a></li>
-          <li><a href="#vision">Vision</a></li>
+          <li><Link to="/protocol">Protocol</Link></li>
+          <li><Link to="/token">Token</Link></li>
+          <li><Link to="/vision">Vision</Link></li>
           <li><Link to="/terminal">Terminal</Link></li>
         </ul>
         <div className="g-nav-right">
@@ -839,9 +839,9 @@ export default function Landing() {
         {/* Mobile dropdown — all nav links, shown when the hamburger is open */}
         {mobileOpen && (
           <div className="g-mobile-menu">
-            <a href="#primitives" onClick={closeMenu}>Protocol</a>
-            <a href="#token" onClick={closeMenu}>Token</a>
-            <a href="#vision" onClick={closeMenu}>Vision</a>
+            <Link to="/protocol" onClick={closeMenu}>Protocol</Link>
+            <Link to="/token" onClick={closeMenu}>Token</Link>
+            <Link to="/vision" onClick={closeMenu}>Vision</Link>
             <Link to="/terminal" onClick={closeMenu}>Terminal</Link>
             <Link to="/app" onClick={closeMenu}>Launch App</Link>
             <a
