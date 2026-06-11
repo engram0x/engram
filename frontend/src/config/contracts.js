@@ -22,21 +22,21 @@ export const BASE_SEPOLIA = {
 };
 
 // Active network the dApp expects. Switch to BASE_MAINNET for production.
-export const ACTIVE_NETWORK = BASE_SEPOLIA;
+export const ACTIVE_NETWORK = BASE_MAINNET;
 
-// Deployed contract addresses. Populated automatically by scripts/deploy.js
-// (which writes deployments/deployments.json). Fill these in after deploying.
+// Deployed contract addresses. Live on Base mainnet (chainId 8453),
+// deployed 2026-06-11. Mirrors deployments/deployments.json.
 export const CONTRACTS = {
   GramID: {
-    address: "",
+    address: "0x100b0b3335Ce56Aa32E37b6F2dec442Ca4375caf",
     abi: GramIDAbi,
   },
   GramScore: {
-    address: "",
+    address: "0xac79082D30be390b47De500e43947b3B9405283F",
     abi: GramScoreAbi,
   },
   GramLink: {
-    address: "",
+    address: "0x189A8cab846FF12e868681f2A4559b4fdB026A73",
     abi: GramLinkAbi,
   },
 };

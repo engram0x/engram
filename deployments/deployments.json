@@ -1,7 +1,9 @@
 {
-  "network": "base-sepolia",
-  "chainId": 84532,
-  "GramID": "",
-  "GramScore": "",
-  "GramLink": ""
+  "network": "base",
+  "chainId": 8453,
+  "deployer": "0x15C1108FCBc3968a072E9C2e55e4296aB672C716",
+  "deployedAt": "2026-06-11T08:47:09.370Z",
+  "GramID": "0x100b0b3335Ce56Aa32E37b6F2dec442Ca4375caf",
+  "GramScore": "0xac79082D30be390b47De500e43947b3B9405283F",
+  "GramLink": "0x189A8cab846FF12e868681f2A4559b4fdB026A73"
 }
