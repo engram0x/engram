@@ -13,9 +13,9 @@ export default function Footer() {
       </Link>
       <ul className="footer-links">
         <li><a href="https://twitter.com/0xEngram" target="_blank" rel="noreferrer">@0xEngram</a></li>
-        <li><a href="#">Telegram</a></li>
-        <li><a href="#">GitHub</a></li>
-        <li><a href="#">Docs</a></li>
+        <li><a href="https://t.me/0xEngram" target="_blank" rel="noreferrer">Telegram</a></li>
+        <li><a href="https://github.com/engram0x/engram" target="_blank" rel="noreferrer">GitHub</a></li>
+        <li><Link to="/protocol">Docs</Link></li>
       </ul>
       <div className="footer-right">© 2025 Engram · 0xengram.xyz · Base Chain</div>
     </footer>
