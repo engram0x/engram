@@ -41,14 +41,21 @@ export const CONTRACTS = {
   },
 };
 
-export const STAKE_AMOUNT_ETH = "0.001";
-
 export const JOB_STATUS = ["OPEN", "ACTIVE", "COMPLETED", "FAILED", "DISPUTED"];
 
+// Master switch for the dApp's on-chain calls. The contracts above are
+// deployed on Base mainnet, but the dApp is not wired up for public use yet —
+// keep this false so /app shows "deploying soon" instead of making reverting
+// reads (which surface as CALL_EXCEPTION). Flip to true to go live.
+export const CONTRACTS_LIVE = false;
+
 export function isDeployed() {
-  return Boolean(
-    CONTRACTS.GramID.address &&
-      CONTRACTS.GramScore.address &&
-      CONTRACTS.GramLink.address
+  return (
+    CONTRACTS_LIVE &&
+    Boolean(
+      CONTRACTS.GramID.address &&
+        CONTRACTS.GramScore.address &&
+        CONTRACTS.GramLink.address
+    )
   );
 }

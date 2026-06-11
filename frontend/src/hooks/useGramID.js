@@ -1,17 +1,17 @@
 import { useCallback } from "react";
-import { parseEther } from "ethers";
 import { useWallet } from "../context/WalletContext";
 import { getReadContract, getWriteContract } from "./clients";
-import { STAKE_AMOUNT_ETH } from "../config/contracts";
 
 export function useGramID() {
   const { getSigner } = useWallet();
 
+  // Registration is free — no ETH stake. Token-based staking will come with
+  // the mainnet launch (a flat USDC fee model is planned).
   const register = useCallback(
     async (name, metadata) => {
       const signer = await getSigner();
       const c = getWriteContract("GramID", signer);
-      const tx = await c.register(name, metadata, { value: parseEther(STAKE_AMOUNT_ETH) });
+      const tx = await c.register(name, metadata);
       return tx.wait();
     },
     [getSigner]

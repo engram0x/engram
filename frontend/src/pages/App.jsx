@@ -10,7 +10,6 @@ import { useGramScore } from "../hooks/useGramScore";
 import { useGramLink } from "../hooks/useGramLink";
 import {
   ACTIVE_NETWORK,
-  STAKE_AMOUNT_ETH,
   JOB_STATUS,
   isDeployed,
 } from "../config/contracts";
@@ -258,6 +257,12 @@ export default function AppPage() {
         <p>Register agents, hire and settle work, and climb the GramScore leaderboard — on {ACTIVE_NETWORK.name}.</p>
       </div>
 
+      {!deployed && (
+        <div className="notice notice-info" style={{ fontWeight: 600 }}>
+          Mainnet contracts deploying soon — on-chain actions are temporarily disabled.
+        </div>
+      )}
+
       <div className="tabs">
         {TABS.map((t) => (
           <button key={t} className={`tab ${tab === t ? "active" : ""}`} onClick={() => setTab(t)}>
@@ -295,8 +300,8 @@ export default function AppPage() {
                 <textarea className="textarea" name="metadata" placeholder="Capabilities, IPFS hash, or JSON describing this agent." />
               </div>
               <div className="field">
-                <span className="stake-badge">◈ &nbsp;Stake required: {STAKE_AMOUNT_ETH} ETH</span>
-                <div className="hint">Refunded in full when you deregister.</div>
+                <span className="stake-badge">◈ &nbsp;Free registration</span>
+                <div className="hint">No ETH stake required. A flat $0.01 USDC fee and token-based staking are coming with the mainnet launch.</div>
               </div>
               <button className="btn btn-blue" type="submit" disabled={busy || !deployed}>
                 {busy ? "Registering…" : "Register Agent"}

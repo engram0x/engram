@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import Anthropic from "@anthropic-ai/sdk";
 import Nav from "../components/Nav";
 import { useWallet } from "../context/WalletContext";
 
@@ -208,205 +209,72 @@ function partial(lines, revealed) {
   return out;
 }
 
-const AGENT_ROWS = [
-  "  ResearchBot   #0042    Score: 847     TRUSTED",
-  "  RiskOracle    #0108    Score: 792     TRUSTED",
-  "  ExecPrime     #0231    Score: 705     VERIFIED",
-];
-
-const TRADING_AGENTS = [
-  "  TradingBot    #0031    Score: 2,341   ELITE",
-  "  ArbitrageAI   #0087    Score: 1,876   TRUSTED",
-  "  MarketMind    #0124    Score: 1,203   TRUSTED",
-];
-
-const HELP = [
-  line("Commands", "gold"),
-  line("  connect wallet            connect a wallet"),
-  line("  register agent <name>     register a new agent (0.001 ENGRAM stake)"),
-  line("  check score <id>          look up an agent's GramScore"),
-  line("  find agent <capability>   discover agents by capability"),
-  line("  create job <description>  post a job with escrow"),
-  line("  clear                     clear the terminal"),
-  line("You can also just ask — e.g. “what is GramScore?”", "dim"),
-];
-
 const INITIAL = [
   line("ENGRAM TERMINAL", "gold"),
+  line("Ask me anything about Engram, agents, Base, or crypto. Type 'clear' to reset.", "dim"),
 ];
 
 const INITIAL_MESSAGES = [{ role: "agent", lines: INITIAL }];
 
-function findAgents(cap) {
-  const rows = (cap || "").toLowerCase().includes("trading") ? TRADING_AGENTS : AGENT_ROWS;
-  return [
-    line(`Agents matching "${cap || "any"}":`, "gold"),
-    ...rows.map((r) => line(r)),
-  ];
+// ── Anthropic (Claude) wiring ───────────────────────────────
+// The terminal answers questions through the Claude API (Haiku for cost).
+// NOTE: VITE_ env vars are inlined into the client bundle at build time, so
+// VITE_ANTHROPIC_API_KEY ships to every visitor. Only safe for local/dev or a
+// trusted-audience deploy — for a public site, proxy this through a backend.
+const ANTHROPIC_API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY;
+const anthropic = ANTHROPIC_API_KEY
+  ? new Anthropic({ apiKey: ANTHROPIC_API_KEY, dangerouslyAllowBrowser: true })
+  : null;
+
+const SYSTEM_PROMPT =
+  "You are the Engram protocol terminal. Engram is a coordination protocol for autonomous agents on Base blockchain. Three primitives: GramID (on-chain agent identity), GramLink (agent-to-agent job settlement and communication), GramScore (reputation earned through work, slashed on failure). The token is $ENGRAM, CA: 0x86E980571b2321B8c6efcD0ea2414aB4A0eB8BA3, live on Base. Answer any questions about Engram, crypto, agents, or Base. Keep responses concise and technical. You are an AI agent, not a human.";
+
+// Map the on-screen transcript to Anthropic message turns. The API requires the
+// first message to be from the user, so drop any leading assistant turns
+// (e.g. the initial ENGRAM TERMINAL banner).
+function toApiMessages(msgs) {
+  const out = [];
+  for (const m of msgs) {
+    if (m.role === "user") out.push({ role: "user", content: m.text });
+    else out.push({ role: "assistant", content: m.lines.map((l) => l.text).join("\n") });
+  }
+  while (out.length && out[0].role === "assistant") out.shift();
+  return out;
 }
 
-// Returns { lines, clear?, patch? }. `patch` updates the session sidebar.
-function process(raw) {
-  const input = raw.trim();
-  if (!input) return { lines: [] };
-  const lower = input.toLowerCase();
+// Split Claude's text reply into tone-tagged lines for the typewriter renderer.
+function textToLines(text) {
+  const trimmed = (text || "").trim();
+  if (!trimmed) return [line("(no response)", "dim")];
+  return trimmed.split("\n").map((t) => line(t));
+}
 
-  // ── COMMANDS ──────────────────────────────────────────────
-  if (lower === "clear") return { clear: true };
-  if (lower === "help" || lower === "commands") return { lines: HELP };
+async function askClaude(apiMessages) {
+  if (!anthropic) throw new Error("not-configured");
+  const resp = await anthropic.messages.create({
+    model: "claude-haiku-4-5",
+    max_tokens: 1024,
+    system: SYSTEM_PROMPT,
+    messages: apiMessages,
+  });
+  return resp.content
+    .filter((b) => b.type === "text")
+    .map((b) => b.text)
+    .join("");
+}
 
-  if (lower === "connect" || lower === "connect wallet") {
-    const addr = "0x7Fa9…E3b21";
-    return {
-      lines: [
-        line("Connecting wallet…", "dim"),
-        line("✓ Wallet connected", "gold"),
-        line(`  ${addr} · Base · 0.42 ETH`),
-      ],
-      patch: { wallet: addr },
-    };
+function errorLines(err) {
+  if (err && err.message === "not-configured") {
+    return [
+      line("Terminal AI is not configured.", "gold"),
+      line("Set VITE_ANTHROPIC_API_KEY and rebuild to enable live responses.", "dim"),
+    ];
   }
-
-  if (lower.startsWith("register agent")) {
-    const name = input.slice("register agent".length).trim() || "Agent";
-    return {
-      lines: [
-        line(`Registering "${name}"…`, "dim"),
-        line(`✓ Agent ${name} registered`, "gold"),
-        line("  GramID assigned · Stake: 0.001 ENGRAM · Status: ACTIVE"),
-      ],
-      patch: { agentId: name },
-    };
-  }
-
-  if (lower.startsWith("check score")) {
-    const cleaned = input.slice("check score".length).trim().replace(/^#/, "");
-    const id = (cleaned || "0042").padStart(4, "0");
-    return {
-      lines: [
-        line(`Agent #${id} · ENGRAM · Score: 1,247 · Jobs: 8 · Reputation: ELITE`, "gold"),
-      ],
-      patch: { score: "1,247", jobs: 8 },
-    };
-  }
-
-  if (lower.startsWith("find agent")) {
-    return { lines: findAgents(input.slice("find agent".length).trim()) };
-  }
-
-  if (lower.startsWith("create job")) {
-    const desc = input.slice("create job".length).trim();
-    return {
-      lines: [
-        line(desc ? `Posting job: "${desc}"…` : "Posting job…", "dim"),
-        line("✓ Job #0089 created", "gold"),
-        line("  Worker: TradingBot #0031 · Escrow: 0.05 ETH · Status: OPEN"),
-      ],
-    };
-  }
-
-  // ── NATURAL LANGUAGE ──────────────────────────────────────
-  const has = (...words) => words.some((w) => lower.includes(w));
-
-  if (has("hi", "hey", "hello", "gm") && input.length <= 6) {
-    return {
-      lines: [
-        line("Hey — I'm the Engram terminal.", "gold"),
-        line("Ask me about the protocol, or run a command. Try: what is Engram?"),
-      ],
-    };
-  }
-
-  if (has("what is engram", "about engram", "explain engram", "whats engram")) {
-    return {
-      lines: [
-        line("Engram", "gold"),
-        line("A coordination protocol for autonomous agents on Base. Agents"),
-        line("discover, trust, hire and pay each other — entirely on-chain,"),
-        line("with no human in the loop. It rests on three primitives:"),
-        line("  GramID    — on-chain identity & staking"),
-        line("  GramLink  — agent-to-agent jobs, escrow & settlement"),
-        line("  GramScore — reputation earned through work"),
-        line("Ask about any of them, or type 'help' for commands.", "dim"),
-      ],
-    };
-  }
-
-  if (has("gramscore", "gram score", "reputation")) {
-    return {
-      lines: [
-        line("GramScore — reputation", "gold"),
-        line("Agents earn GramScore by completing jobs successfully. Fail a job,"),
-        line("miss a deadline or act maliciously and a portion is slashed. It's"),
-        line("non-transferable, so it can only be earned through real work — a"),
-        line("pure, on-chain trust signal. Higher score → more trust → more work."),
-        line("Try:  check score 0042", "dim"),
-      ],
-    };
-  }
-
-  if (has("gramid", "gram id", "identity")) {
-    return {
-      lines: [
-        line("GramID — identity", "gold"),
-        line("Register an agent and stake $ENGRAM to mint a GramID — a verifiable,"),
-        line("portable on-chain identity. The stake aligns incentives and keeps the"),
-        line("registry honest; it's returned in full when you deregister."),
-        line("Try:  register agent <name>", "dim"),
-      ],
-    };
-  }
-
-  if (has("gramlink", "gram link")) {
-    return {
-      lines: [
-        line("GramLink — coordination", "gold"),
-        line("Post a job and its payment is locked in escrow. A worker agent"),
-        line("accepts, delivers the result, and the escrow is released on"),
-        line("completion. Failures refund the hirer — all settled on-chain,"),
-        line("with no middleman."),
-        line("Try:  create job <description>", "dim"),
-      ],
-    };
-  }
-
-  if (has("how do i register", "how to register", "register an agent", "registering")) {
-    return {
-      lines: [
-        line("Registering an agent", "gold"),
-        line("  1. Connect a wallet on Base      →  connect wallet"),
-        line("  2. Register with a name          →  register agent <name>"),
-        line("  3. Stake 0.001 ENGRAM (refunded when you deregister)"),
-        line("Your agent receives a GramID and becomes discoverable. Try it now.", "dim"),
-      ],
-    };
-  }
-
-  if (has("active agents", "show me agents", "list agents", "show agents", "find agents", "available agents")) {
-    return { lines: findAgents("active") };
-  }
-
-  if (has("create a job", "post a job", "how do i hire", "hire an agent")) {
-    return {
-      lines: [
-        line("Hiring an agent", "gold"),
-        line("Post a job and escrow payment; a worker agent accepts and delivers."),
-        line("Try:  create job <description>", "dim"),
-      ],
-    };
-  }
-
-  if (has("what can you do", "what commands", "help me", "options")) {
-    return { lines: HELP };
-  }
-
-  // ── FALLBACK ──────────────────────────────────────────────
-  return {
-    lines: [
-      line("I'm not sure about that one.", "dim"),
-      line("Ask about Engram, GramID, GramLink or GramScore — or type 'help' for commands."),
-    ],
-  };
+  const detail = err?.error?.error?.message || err?.message || "unknown error";
+  return [
+    line("Couldn't reach the model.", "gold"),
+    line(`  ${detail}`, "dim"),
+  ];
 }
 
 function truncate(addr) {
@@ -419,8 +287,8 @@ export default function Terminal() {
   const { account } = useWallet();
   const [messages, setMessages] = useState(INITIAL_MESSAGES);
   const [value, setValue] = useState("");
-  const [session, setSession] = useState({ wallet: null, agentId: "ENGRAM", score: "1,247", jobs: 8 });
-  // in-flight agent reply: { lines, phase: "thinking" | "typing", revealed }
+  const [session] = useState({ wallet: null, agentId: "ENGRAM", score: "1,247", jobs: 8 });
+  // in-flight agent reply: { lines, phase: "thinking" | "typing", revealed, step }
   const [pending, setPending] = useState(null);
   const endRef = useRef(null);
   const inputRef = useRef(null);
@@ -430,43 +298,53 @@ export default function Terminal() {
     endRef.current?.scrollIntoView({ block: "end" });
   }, [messages, pending]);
 
-  // drives the "thinking" pause, then the per-character typewriter
+  // "thinking" persists while Claude responds; the typewriter runs once the
+  // reply arrives and `phase` flips to "typing".
   useEffect(() => {
-    if (!pending) return undefined;
-
-    if (pending.phase === "thinking") {
-      const t = setTimeout(() => {
-        setPending((p) => (p ? { ...p, phase: "typing", revealed: 0 } : p));
-      }, 1300);
-      return () => clearTimeout(t);
-    }
-
-    // phase === "typing"
-    if (pending.revealed >= totalChars(pending.lines)) {
+    if (!pending || pending.phase !== "typing" || !pending.lines) return undefined;
+    const total = totalChars(pending.lines);
+    if (pending.revealed >= total) {
       const finished = pending.lines;
       setMessages((m) => [...m, { role: "agent", lines: finished }]);
       setPending(null);
       return undefined;
     }
     const t = setTimeout(() => {
-      setPending((p) => (p && p.phase === "typing" ? { ...p, revealed: p.revealed + 1 } : p));
-    }, 20);
+      setPending((p) =>
+        p && p.phase === "typing"
+          ? { ...p, revealed: Math.min(total, p.revealed + p.step) }
+          : p
+      );
+    }, 12);
     return () => clearTimeout(t);
   }, [pending]);
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    const raw = value;
-    if (!raw.trim() || pending) return;
-    const result = process(raw);
+    const raw = value.trim();
+    if (!raw || pending) return;
     setValue("");
-    if (result.clear) {
+
+    if (raw.toLowerCase() === "clear") {
       setMessages(INITIAL_MESSAGES);
       return;
     }
-    if (result.patch) setSession((s) => ({ ...s, ...result.patch }));
+
+    // Build the API history from the transcript so far, then add this turn.
+    const apiHistory = toApiMessages(messages);
     setMessages((m) => [...m, { role: "user", text: raw }]);
-    setPending({ lines: result.lines, phase: "thinking", revealed: 0 });
+    setPending({ phase: "thinking", lines: null, revealed: 0, step: 1 });
+
+    let lines;
+    try {
+      const text = await askClaude([...apiHistory, { role: "user", content: raw }]);
+      lines = textToLines(text);
+    } catch (err) {
+      lines = errorLines(err);
+    }
+    const total = totalChars(lines);
+    const step = Math.max(1, Math.ceil(total / 240)); // cap the typewriter at ~3s
+    setPending({ phase: "typing", lines, revealed: 0, step });
   };
 
   const typed = pending && pending.phase === "typing" ? partial(pending.lines, pending.revealed) : null;
