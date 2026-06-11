@@ -1,9 +1,8 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-// base: "./" keeps asset paths relative so the build works on GitHub Pages
-// (under /repo/) and Vercel alike.
+// base: "/" serves from the apex custom domain (0xengram.xyz) on GitHub Pages.
 export default defineConfig({
   plugins: [react()],
-  base: "./",
+  base: "/",
 });
