@@ -170,6 +170,18 @@ const styles = `
   .eterm-beta-pill { margin: 0; }
   .eterm-output { min-height: 52vh; }
 }
+
+@media (max-width: 480px) {
+  .eterm-sidebar { padding: 18px 16px; gap: 16px 24px; }
+  .eterm-topbar { padding: 12px 16px; font-size: 11px; }
+  .eterm-output { padding: 18px 16px; font-size: 13px; }
+  .eterm-bubble, .eterm-msg { max-width: 100%; }
+  .eterm-inputbar { padding: 12px 16px; gap: 8px; }
+  .eterm-send { padding: 10px 14px; }
+  /* the mocked agent listings are space-padded ASCII — let them scroll
+     instead of forcing the whole console wider than the screen */
+  .eterm-line { overflow-x: auto; }
+}
 `;
 
 const line = (text, tone = "text") => ({ text, tone });

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 /*
@@ -51,7 +51,12 @@ const styles = `
   color: var(--gold);
   letter-spacing: 0.2em;
   text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+/* keep the checksummed contract address in its original mixed case */
+.g-announce .g-ann-ca { text-transform: none; color: var(--gold-light); }
 
 /* ── NAV ── */
 .g-nav {
@@ -147,6 +152,35 @@ const styles = `
   display: inline-block;
 }
 .g-btn-nav-gold:hover { background: var(--gold-light); }
+
+/* ── MOBILE NAV (hamburger + dropdown) ── */
+.g-nav-burger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--gold-border);
+  color: var(--gold);
+  font-size: 18px;
+  line-height: 1;
+  width: 40px;
+  height: 38px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.g-mobile-menu { display: none; }
+.g-mobile-menu a {
+  color: var(--white);
+  text-decoration: none;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 16px 4px;
+  border-bottom: 1px solid var(--border);
+}
+.g-mobile-menu a:last-child { border-bottom: none; color: var(--gold); }
 
 /* ── HERO ── */
 .g-hero {
@@ -670,7 +704,34 @@ const styles = `
 /* ── RESPONSIVE ── */
 @media (max-width: 900px) {
   .g-nav { padding: 0 20px; }
+  /* On mobile the bar is just logo + hamburger; every link/CTA (including the
+     ghost "Launch App" and gold "Buy") moves into the dropdown so nothing
+     overflows the 375px viewport. */
   .g-nav-links { display: none; }
+  .g-btn-nav-ghost { display: none; }
+  .g-btn-nav-gold { display: none; }
+  .g-nav-burger { display: inline-flex; }
+  .g-nav-right { gap: 10px; }
+  .g-mobile-menu .g-mm-buy {
+    color: #0a0a0a;
+    background: var(--gold);
+    text-align: center;
+    margin-top: 10px;
+    padding: 14px 4px;
+    border-bottom: none;
+  }
+  .g-mobile-menu {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 68px;
+    left: 0;
+    right: 0;
+    background: rgba(10,10,10,0.98);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--gold-border);
+    padding: 6px 20px 14px;
+  }
   .g-hero { padding: 80px 20px; min-height: auto; }
   .g-hero-radar { display: none; }
   .g-flow-section, .g-primitives-section, .g-protocol-section, .g-token-section { padding: 80px 20px; }
@@ -678,20 +739,34 @@ const styles = `
   .g-primitives-grid, .g-protocol-grid { grid-template-columns: 1fr; }
   .g-moat-section { padding: 100px 20px; }
   .g-footer { padding: 32px 20px; flex-direction: column; text-align: center; }
+  .g-footer-links { flex-wrap: wrap; justify-content: center; }
   .g-hero-stats { gap: 32px; }
 }
 
-@media (max-width: 768px) {
-  /* Mobile nav: show only logo + ENGRAM (left) and Buy $ENGRAM (right).
-     Nav links are already hidden at <=900px; also hide the ghost button
-     (Launch App) so nothing overlaps or gets cut off. */
+@media (max-width: 600px) {
   .g-nav { padding: 0 16px; }
-  .g-nav-links { display: none; }
-  .g-btn-nav-ghost { display: none; }
+  /* The CA is 42 chars — let the announce bar wrap to two lines on phones so
+     the full address stays readable (rather than truncating with ellipsis). */
+  .g-announce {
+    padding: 8px 14px;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    word-break: break-word;
+    line-height: 1.55;
+  }
+  .g-hero h1 { font-size: clamp(26px, 8vw, 40px); }
+  .g-hero-stat-val { font-size: 26px; }
+  .g-token-symbol { font-size: clamp(48px, 15vw, 72px); }
 }
 `;
 
 export default function Landing() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const closeMenu = () => setMobileOpen(false);
+
   // Load the gold design's Google Fonts (Press Start 2P + VT323 + DM Sans),
   // then reveal `.g-fade-in` sections on scroll — both ported from engram-gold.html.
   useEffect(() => {
@@ -732,7 +807,8 @@ export default function Landing() {
 
       {/* ANNOUNCE */}
       <div className="g-announce">
-        $ENGRAM token launching soon &nbsp;·&nbsp; Base Chain
+        $ENGRAM is live on Base &nbsp;·&nbsp; CA:{" "}
+        <span className="g-ann-ca">0x86E980571b2321B8c6efcD0ea2414aB4A0eB8BA3</span>
       </div>
 
       {/* NAV */}
@@ -750,7 +826,35 @@ export default function Landing() {
         <div className="g-nav-right">
           <Link to="/app" className="g-btn-nav-ghost">Launch App →</Link>
           <a href="https://app.uniswap.org" target="_blank" rel="noreferrer" className="g-btn-nav-gold">Buy $ENGRAM</a>
+          <button
+            className="g-nav-burger"
+            onClick={() => setMobileOpen((o) => !o)}
+            aria-label="Toggle menu"
+            aria-expanded={mobileOpen}
+          >
+            {mobileOpen ? "✕" : "☰"}
+          </button>
         </div>
+
+        {/* Mobile dropdown — all nav links, shown when the hamburger is open */}
+        {mobileOpen && (
+          <div className="g-mobile-menu">
+            <a href="#primitives" onClick={closeMenu}>Protocol</a>
+            <a href="#token" onClick={closeMenu}>Token</a>
+            <a href="#vision" onClick={closeMenu}>Vision</a>
+            <Link to="/terminal" onClick={closeMenu}>Terminal</Link>
+            <Link to="/app" onClick={closeMenu}>Launch App</Link>
+            <a
+              href="https://app.uniswap.org"
+              target="_blank"
+              rel="noreferrer"
+              className="g-mm-buy"
+              onClick={closeMenu}
+            >
+              Buy $ENGRAM
+            </a>
+          </div>
+        )}
       </div>
 
       {/* HERO */}
@@ -927,7 +1031,7 @@ export default function Landing() {
             <p className="g-section-eyebrow">Token</p>
             <div className="g-token-symbol">$ENGRAM</div>
             <p className="g-token-desc">The fuel of the agent economy. Agents spend it to access other agents. Developers earn it when their agents perform work. The more agents that join, the more $ENGRAM flows.</p>
-            <div className="g-token-badge">◈ &nbsp; Launching on Base Chain</div>
+            <div className="g-token-badge">◈ &nbsp; Live on Base Chain</div>
           </div>
           <div className="g-fade-in">
             <div className="g-utility-list">

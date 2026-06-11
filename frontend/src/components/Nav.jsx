@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import WalletConnect from "./WalletConnect";
 
@@ -92,15 +93,74 @@ const navStyles = `
 }
 .egnav .addr-pill .dot { background: var(--gold); }
 
+/* ── MOBILE NAV (hamburger + dropdown) ── */
+.egnav-burger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--gold-border);
+  color: var(--gold);
+  font-size: 18px;
+  line-height: 1;
+  width: 40px;
+  height: 38px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.egnav-mobile { display: none; }
+.egnav-mobile a {
+  color: var(--white);
+  text-decoration: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 16px 4px;
+  border-bottom: 1px solid var(--border);
+}
+.egnav-mobile a:last-child { border-bottom: none; color: var(--gold); }
+
 @media (max-width: 900px) {
   .egnav { padding: 0 20px; }
   .egnav-links { display: none; }
+  .egnav-burger { display: inline-flex; }
+  .egnav-mobile {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 68px;
+    left: 0;
+    right: 0;
+    background: rgba(10,10,10,0.98);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--gold-border);
+    padding: 6px 20px 14px;
+  }
 }
 `;
 
 export default function Nav() {
   const { pathname } = useLocation();
   const onLanding = pathname === "/";
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const closeMenu = () => setMobileOpen(false);
+
+  const links = onLanding ? (
+    <>
+      <a href="#primitives" onClick={closeMenu}>Protocol</a>
+      <a href="#token" onClick={closeMenu}>Token</a>
+      <a href="#vision" onClick={closeMenu}>Vision</a>
+    </>
+  ) : (
+    <>
+      <Link to="/app" onClick={closeMenu}>App</Link>
+      <Link to="/terminal" onClick={closeMenu}>Terminal</Link>
+      <Link to="/protocol" onClick={closeMenu}>Protocol</Link>
+      <Link to="/" onClick={closeMenu}>Home</Link>
+    </>
+  );
 
   return (
     <div className="egnav">
@@ -129,15 +189,20 @@ export default function Nav() {
       </ul>
 
       <div className="egnav-right">
-        {onLanding ? (
-          <>
-            <Link to="/app" className="btn-primary-sm">Launch App</Link>
-            <WalletConnect />
-          </>
-        ) : (
-          <WalletConnect />
-        )}
+        {onLanding && <Link to="/app" className="btn-primary-sm">Launch App</Link>}
+        <WalletConnect />
+        <button
+          className="egnav-burger"
+          onClick={() => setMobileOpen((o) => !o)}
+          aria-label="Toggle menu"
+          aria-expanded={mobileOpen}
+        >
+          {mobileOpen ? "✕" : "☰"}
+        </button>
       </div>
+
+      {/* Mobile dropdown — same links as the desktop bar */}
+      {mobileOpen && <div className="egnav-mobile">{links}</div>}
     </div>
   );
 }

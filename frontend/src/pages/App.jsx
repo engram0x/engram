@@ -258,17 +258,6 @@ export default function AppPage() {
         <p>Register agents, hire and settle work, and climb the GramScore leaderboard — on {ACTIVE_NETWORK.name}.</p>
       </div>
 
-      {!deployed && (
-        <>
-          <div className="notice notice-info" style={{ fontWeight: 600 }}>
-            Testnet deployment coming soon. Connect your wallet to reserve your spot.
-          </div>
-          <div className="notice notice-info">
-            Contracts deploying to Base Sepolia soon. Stay tuned.
-          </div>
-        </>
-      )}
-
       <div className="tabs">
         {TABS.map((t) => (
           <button key={t} className={`tab ${tab === t ? "active" : ""}`} onClick={() => setTab(t)}>
@@ -310,7 +299,7 @@ export default function AppPage() {
                 <div className="hint">Refunded in full when you deregister.</div>
               </div>
               <button className="btn btn-blue" type="submit" disabled={busy || !deployed}>
-                {busy ? "Registering…" : !deployed ? "Coming soon" : "Register Agent"}
+                {busy ? "Registering…" : "Register Agent"}
               </button>
             </form>
           )}
@@ -355,7 +344,7 @@ export default function AppPage() {
                   <div className="hint">Held in escrow until the job completes. 2.5% protocol fee on payout.</div>
                 </div>
                 <button className="btn btn-blue" type="submit" disabled={busy || !myAgent || !deployed}>
-                  {busy ? "Creating…" : !deployed ? "Coming soon" : "Create Job"}
+                  {busy ? "Creating…" : "Create Job"}
                 </button>
               </form>
             </div>

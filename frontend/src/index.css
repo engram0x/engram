@@ -480,6 +480,21 @@ footer {
   .hero { padding: 72px 20px 56px; }
   .moat-section { padding: 80px 20px; }
   .hero-stats { gap: 28px; }
+
+  /* ── dApp / Protocol pages on mobile ── */
+  .app-shell { padding: 32px 16px 64px; }
+  .app-head h1 { font-size: 26px; }
+  .panel { padding: 20px; overflow-x: auto; }
+  .proto-doc { padding: 48px 20px 64px; }
+  .connect-wall { padding: 64px 16px; }
+  .agent-stats { gap: 18px; }
+  .tabs { gap: 0; }
+  .tab { padding: 12px 14px; font-size: 13px; }
+  /* Leaderboard has 5 columns — let it scroll horizontally inside the panel
+     instead of overflowing the viewport. */
+  .table { min-width: 480px; }
+  footer { padding: 28px 20px; }
+  .footer-links { flex-wrap: wrap; justify-content: center; }
 }
 
 /* ============================================================
